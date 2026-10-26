@@ -20,10 +20,15 @@ Delivery days 2 Jan to 1 Feb 2026, 744 hours, every hour has both a forecast and
 | Mean absolute error | **2,022 MW**, on an average output of 11,286 MW (nMAE 17.9%) |
 | Bias | **+1,746 MW**: the forecast was above outturn in 85% of hours; only 4 of 31 days averaged below |
 | P90 / P95 buffer | **~4,160 MW / ~5,290 MW** above the forecast-implied need |
+| Buffer tested forward | Sized each day from earlier days only, the P90 rule covered **86%** of hours and P95 about 90% |
 | Lead time | MAE 1,685 MW at a 1 h horizon, 1,932 MW at 24 h, 2,301 MW at 48 h |
 | Time of day | Worst 03:00 to 05:00 (MAE ~2,400 MW), best 20:00 to 22:00 (~1,750 MW) |
 | Worst hour | 12 Jan 01:00: forecast 20,942 MW, actual 14,048 MW (+6,894 MW), published 11 Jan 07:30 |
 | Gate sensitivity | Moving the gate to 09:50 (N2EX close) changes MAE only to 1,996 MW |
+
+The buffer needs care. Sized on the same month it is judged on, P90 covers 90% by
+construction; applied the way a desk would use it (each day sized only from the days
+before) it covered 86%. To actually get 90% cover going forward, use about the P95 level.
 
 The bias is the headline. An error that is positive 85% of the time is mostly a systematic
 offset, not noise, so a large share of the buffer could be removed by correcting the forecast
@@ -144,16 +149,20 @@ had to buy more. MAE, RMSE, bias and nMAE (MAE as a share of mean output) are re
 not, because wind output can be close to zero and dividing by it lets a few calm hours dominate.
 The buffer is the 90th / 95th percentile of signed error over all hours, taken as the smallest
 observed error that covers at least that share of hours, so "covered in 90% of hours" is true
-for the period shown.
+for the period shown. Because that is hindsight, the app also runs a walk-forward check: each
+delivery day gets a buffer sized only from earlier days (after a 7-day warm-up), and the
+share of hours it actually covered is shown next to the recommendation.
 
 All choices and their trade-offs are in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Testing and CI
 
-- **Backend:** 129 pytest tests, ~98% line coverage. The selection rule has explicit tests for a
+- **Backend:** 142 pytest tests, ~98% line coverage. The selection rule has explicit tests for a
   forecast published one minute after the cutoff, exactly at the cutoff, both 2026 UK clock
-  changes, missing data and a zero horizon. Metrics are checked against hand-computed values.
-- **Frontend:** 39 vitest / Testing Library tests for the controls, API client, URL filters,
+  changes, missing data and a zero horizon, plus an audit that re-derives every January
+  selection with a naive loop and requires an exact match. Metrics are checked against
+  hand-computed values.
+- **Frontend:** 42 vitest / Testing Library tests for the controls, API client, URL filters,
   KPI wording and chart helpers.
 - **End to end:** `make verify URL=<base-url>` checks the UI shell, every endpoint, validation
   errors, docs, cache headers, and that the deployment's numbers match a local computation.
@@ -196,5 +205,9 @@ How the output was checked:
   after the backend container moved IP. Each was fixed and the fix verified.
 - **The deployment was checked before trusting it**: a local `vercel build` showed the function
   was over Vercel's size limit, which led to removing pyarrow from the serving path.
+- **A deliberately critical review pass** re-derived every forecast selection with a naive
+  loop (no mismatches, no lookahead), and found that the headline buffer was sized with
+  hindsight. That led to the walk-forward check, plain-English labels in the UI, and JSON
+  500s that are logged with a request id.
 - **The UI was checked in a real browser** (headless Chrome screenshots at several widths),
   and `verify_deploy.sh` compares a deployment's numbers with a local computation.

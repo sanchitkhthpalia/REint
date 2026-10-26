@@ -195,3 +195,8 @@ from 2 Jan to 1 Feb 2026. All of January is GMT, so UK local = UTC.
    assumed to match, but this is not verified.
 6. **Rate limits:** none were documented in the spec and none were hit. Not tested beyond about
    20 requests.
+7. **Is a forecast usable at its `publishTime`?** The selection assumes a forecast can be acted
+   on from the moment it is published. If BMRS makes rows visible some minutes later, a forecast
+   published just before the gate may not have been seen in time. The 15 Jan publish at 12:25
+   suggests `publishTime` is the real release time, not a schedule slot, but this is not
+   confirmed. With the default 09:00 gate the nearest publish is 07:30, so 90 minutes of slack.

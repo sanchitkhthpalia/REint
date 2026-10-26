@@ -29,6 +29,10 @@ jobs:
       - name: Tests with coverage
         working-directory: backend
         run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=90
+      - name: Committed OpenAPI schema matches the code
+        run: |
+          python scripts/export_openapi.py
+          git diff --exit-code backend/openapi.json
 
   frontend:
     name: Frontend (eslint, tsc, vitest, build)
@@ -44,6 +48,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - name: Generated API types match the committed schema
+        run: |
+          npm run gen:api
+          git diff --exit-code src/api/schema.ts
       - name: ESLint
         run: npm run lint
       - name: Type check

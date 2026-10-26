@@ -103,11 +103,12 @@ bundles `data/*.csv.gz` and `manifest.json` into the function.
 
 ## Testing
 
-- **Backend (pytest, 129 tests, ~98% coverage):** selection rule edge cases (one minute after
-  cutoff, exactly at cutoff, clock changes, missing data), metrics on hand-computed datasets,
+- **Backend (pytest, 142 tests, ~98% coverage):** selection rule edge cases (one minute after
+  cutoff, exactly at cutoff, clock changes, missing data), a lookahead audit that re-derives
+  every January selection with a naive loop, metrics on hand-computed datasets,
   normalisation on real Elexon response fixtures, client retries with mocked HTTP, API
   validation and caching, snapshot integrity.
-- **Frontend (vitest + Testing Library, 39 tests):** controls, API client error handling, URL
+- **Frontend (vitest + Testing Library, 42 tests):** controls, API client error handling, URL
   filter parsing, KPI wording, histogram binning, axis ticks.
 - **End to end:** `scripts/verify_deploy.sh` checks a running deployment and compares its
   `/api/metrics` with a local computation.

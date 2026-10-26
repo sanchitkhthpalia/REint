@@ -117,8 +117,14 @@ have no forecast at all because WINDFOR rarely reaches that far ahead; the UI sh
 - The buffer is the empirical quantile (`inverted_cdf`) of signed error over all paired slots,
   floored at zero, at 90% and 95%. That makes "buy X MW above the forecast to be covered in 90%
   of hours" literally true in-sample. Descriptive percentiles use linear interpolation.
+- Because an in-sample buffer is sized with hindsight, each level also reports a walk-forward
+  coverage: every delivery day after a 7-day warm-up gets a buffer sized only from earlier
+  days, scored on that day.
+- All shares (coverage, shortfall, walk-forward) are fractions in [0, 1].
 
-**Consequences.** January bias is large (+1,746 MW, 85% of hours over-forecast), so most of the
+**Consequences.** In January the in-sample P90 buffer (~4,160 MW) covered only 86% of hours
+when applied walk-forward, and P95 about 90%. The UI shows both numbers side by side.
+January bias is large (+1,746 MW, 85% of hours over-forecast), so most of the
 buffer is systematic rather than random. Part of it may come from WINDFOR and FUELHH covering
 different sets of wind farms. The UI states this caveat next to the numbers.
 
@@ -130,7 +136,9 @@ different sets of wind farms. The UI states this caveat next to the numbers.
 `/api/metrics/by-hour`, `/api/metrics/by-horizon`; OpenAPI docs at `/api/docs`. Unknown query
 parameters are rejected. All validation problems come back together as standard 422 errors that
 name the offending parameter. Selections and lead-time curves are LRU-cached in process.
-Hashes of the served data files are checked against the manifest at startup. Logs are one JSON object per line.
+Hashes of the served data files are checked against the manifest at startup.
+An exception inside a request is logged with its traceback and request id and returned as
+a JSON 500 (`no-store`). Incoming `X-Request-ID` values are only reused if short and plain. Logs are one JSON object per line.
 
 **Consequences.** The frontend gets typed, predictable errors; the app will not start on a
 corrupted snapshot.

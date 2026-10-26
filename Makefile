@@ -11,6 +11,7 @@ help: ## List targets
 	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
 
 setup: ## Create the Python venv and install backend + frontend dependencies
+	@$(PY) -c 'import sys; v = sys.version_info; sys.exit(0 if v >= (3, 12) else f"Python 3.12+ needed, $(PY) is {v.major}.{v.minor}. Try: make setup PY=python3.12")'
 	$(PY) -m venv $(VENV)
 	$(VPY) -m pip install --upgrade pip
 	$(VPY) -m pip install -e "backend[dev]"
