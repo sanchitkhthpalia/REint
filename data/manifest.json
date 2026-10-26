@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "snapshot_id": "f820b55f1d77aa3a",
-  "fetched_at_utc": "2026-10-26T15:03:48.580060Z",
+  "snapshot_id": "335257e96696a0c5",
+  "fetched_at_utc": "2026-10-26T16:48:57.385154Z",
   "source": {
     "base_url": "https://data.elexon.co.uk/bmrs/api/v1",
     "datasets": [
@@ -130,6 +130,7 @@
   },
   "files": {
     "actuals.parquet": {
+      "role": "archive",
       "rows": 1488,
       "columns": {
         "start_time_utc": "timestamp[us, tz=UTC]",
@@ -138,6 +139,7 @@
       "sha256": "70811c70812c62b9d25681a9bd62da43307d4d6c9aba7a577c556fd84793f1b4"
     },
     "forecasts.parquet": {
+      "role": "archive",
       "rows": 19856,
       "columns": {
         "publish_time_utc": "timestamp[us, tz=UTC]",
@@ -145,6 +147,25 @@
         "generation_mw": "int64"
       },
       "sha256": "fcd79861ad8863dffc882a91e4f40d2af7645c8d38c6342ecfb032caf9e116d2"
+    },
+    "actuals.csv.gz": {
+      "role": "serving",
+      "rows": 1488,
+      "columns": {
+        "start_time_utc": "timestamp[us, tz=UTC]",
+        "generation_mw": "int64"
+      },
+      "sha256": "97b81fd6f464f3bf501ac042dd6a911e823bafa6b5817d736557f1588e011cf6"
+    },
+    "forecasts.csv.gz": {
+      "role": "serving",
+      "rows": 19856,
+      "columns": {
+        "publish_time_utc": "timestamp[us, tz=UTC]",
+        "start_time_utc": "timestamp[us, tz=UTC]",
+        "generation_mw": "int64"
+      },
+      "sha256": "d0ad80427390f6606bccc104bab87924fe2fe1e7c8205ccd2b7383ee27ddb295"
     }
   },
   "data_quality": {

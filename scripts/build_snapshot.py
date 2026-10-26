@@ -1,7 +1,9 @@
 """Download the decision scope from Elexon and write a versioned snapshot to data/.
 
-Writes data/actuals.parquet, data/forecasts.parquet and data/manifest.json. The app serves
-from this snapshot (docs/DECISIONS.md D-002), so it never depends on Elexon at request time.
+Writes data/manifest.json plus each table twice from the same in-memory records:
+- *.parquet: archive copy (typed, for analysis tools);
+- *.csv.gz: serving copy, read by the API without pyarrow (docs/DECISIONS.md D-013).
+The app serves from this snapshot (D-002), so it never depends on Elexon at request time.
 
 Usage (from the repo root, with the backend installed: pip install -e "backend[dev]"):
     python scripts/build_snapshot.py
@@ -52,13 +54,31 @@ def iso(dt: datetime) -> str:
     return dt.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-def write_parquet(table: pa.Table, path: Path) -> dict[str, Any]:
-    pq.write_table(table, path, compression="zstd")
+def _file_entry(table: pa.Table, path: Path, role: str) -> dict[str, Any]:
     return {
+        "role": role,
         "rows": table.num_rows,
         "columns": {f.name: str(f.type) for f in table.schema},
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
     }
+
+
+def write_parquet(table: pa.Table, path: Path) -> dict[str, Any]:
+    """Archive copy: typed, compact, for analysis tools."""
+    pq.write_table(table, path, compression="zstd")
+    return _file_entry(table, path, "archive")
+
+
+def write_csv_gz(table: pa.Table, path: Path) -> dict[str, Any]:
+    """Serving copy, read by the API with plain pandas so pyarrow stays out of the deployed
+    function (D-013). gzip mtime is fixed so identical data gives an identical file hash."""
+    table.to_pandas().to_csv(
+        path,
+        index=False,
+        date_format="%Y-%m-%dT%H:%M:%SZ",
+        compression={"method": "gzip", "mtime": 0},
+    )
+    return _file_entry(table, path, "serving")
 
 
 def quality_summary(
@@ -132,6 +152,8 @@ async def build(scope: SnapshotScope, out_dir: Path) -> dict[str, Any]:
     files = {
         "actuals.parquet": write_parquet(actuals_table, out_dir / "actuals.parquet"),
         "forecasts.parquet": write_parquet(forecasts_table, out_dir / "forecasts.parquet"),
+        "actuals.csv.gz": write_csv_gz(actuals_table, out_dir / "actuals.csv.gz"),
+        "forecasts.csv.gz": write_csv_gz(forecasts_table, out_dir / "forecasts.csv.gz"),
     }
     content_hash = hashlib.sha256(
         "".join(files[name]["sha256"] for name in sorted(files)).encode()

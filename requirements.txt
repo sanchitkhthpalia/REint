@@ -1,8 +1,9 @@
-# Runtime dependencies for the Vercel Python function (api/index.py).
+# Runtime dependencies for the Vercel Python function (api/index.py) and the Docker image.
 # Keep in sync with backend/pyproject.toml [project.dependencies]; dev tools live there only.
+# No pyarrow: the API reads the CSV serving copies, keeping the function bundle small
+# (docs/DECISIONS.md D-013).
 fastapi==0.162.0
 numpy==2.5.4
 pandas==3.1.0
-pyarrow==26.0.0
 pydantic==2.14.1
 tzdata>=2024.1

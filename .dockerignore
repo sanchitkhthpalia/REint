@@ -11,6 +11,7 @@
 **/node_modules
 frontend
 backend/tests
+data/*.parquet
 backend/*.egg-info
 docs
 scripts

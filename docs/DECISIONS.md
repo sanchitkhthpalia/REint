@@ -163,10 +163,7 @@ Each entry: the decision, why, and what would change it. Facts about the data li
     `requirements.txt`.
 - **Frontend deploy:** Vercel builds `frontend/` (`npm ci && npm run build`) and serves
   `frontend/dist` statically. The SPA calls same-origin `/api`, so production needs no CORS.
-- **Risk (unverified until first deploy):** pyarrow, pandas and numpy are about 245 MB
-  installed, which may exceed Vercel's Python function size limit. Fallback: have
-  `build_snapshot.py` also write a compact JSON/CSV copy, and drop pyarrow from
-  `requirements.txt`.
+- **Bundle size risk:** confirmed and resolved. See D-013.
 
 ## D-011: Frontend
 - **Stack:** Vite, React 19, TypeScript (strict), Tailwind v4, TanStack Query and Recharts.
@@ -218,3 +215,54 @@ Each entry: the decision, why, and what would change it. Facts about the data li
   different address with the frontend still running.
 - **Log noise:** healthcheck requests to `/api/health` are logged at DEBUG, so the 15-second
   probes don't drown the INFO access log.
+
+## D-013: Vercel deployment, with pyarrow removed from the serving path
+- **Shape:** one Vercel project.
+  - `framework: null`; Vercel builds `frontend/` (`npm ci && npm run build`) and serves
+    `frontend/dist` statically.
+  - `api/index.py` is a file-based Python function, Python 3.12 on x86_64 (Vercel's default),
+    exporting the FastAPI `app`.
+  - The rewrite `/api/(.*)` sends every API path to that one function, and FastAPI routes on
+    the original path.
+  - `includeFiles` bundles only `backend/app/**`, `data/manifest.json` and `data/*.csv.gz`.
+    `excludeFiles` drops the frontend, tests, docs, scripts and the parquet archive.
+- **Evidence:**
+  - Vercel's docs list a 500 MB Python limit. A local `vercel build` (CLI 65.2.0, Linux x86_64
+    wheels), however, rejected the function with
+    `LAMBDA_SIZE_EXCEEDED: Total bundle size (292.54 MB) exceeds the maximum function size
+    (225 MB)`.
+  - pyarrow alone was 162 MB of that, and the app only used it to read parquet.
+- **Decision:** the API reads gzipped CSV serving copies with plain pandas, and pyarrow leaves
+  the runtime dependencies.
+  - `build_snapshot.py` writes both formats from the same in-memory records.
+  - Parquet stays as the typed archive for analysis.
+  - The manifest hashes both and labels each file `serving` or `archive`.
+  - `tests/test_snapshot_files.py` asserts the two copies are value-identical.
+  - Result: the function bundle is **110 MB** (pandas 43, numpy 54, pydantic 7), the Docker
+    backend image 482 MB (was 695 MB), and the serving data 107 KB.
+- **Alternatives rejected:**
+  - Fully precomputed JSON: users pick arbitrary date ranges, gate times and horizons, so the
+    combinations are unbounded.
+  - Replacing pandas with numpy-only code: it would rewrite the tested domain layer for little
+    gain once the bundle fits.
+  - The Large Functions beta (5 GB): it avoids the problem rather than fixing it, and adds
+    cold-start weight.
+- **Cold start**, measured on a fresh Linux container:
+  - Imports take about 1.4 s (pandas+numpy 0.9–1.1 s, FastAPI 0.4 s), and the snapshot loads
+    in 0.07 s.
+  - First requests take 4–40 ms, except `/api/metrics/by-horizon` (0.4 s, 48 selections).
+  - Mitigation: successful GETs send `Cache-Control: public, max-age=300, s-maxage=86400,
+    stale-while-revalidate=604800`, so Vercel's CDN answers repeat requests without invoking
+    the function.
+  - Vercel's CDN cache is scoped per deployment, so new data means a new deploy and fresh
+    answers.
+  - Errors and `/api/health` are `no-store`.
+- **Python version:** no `.python-version` file. Pinning `3.12` made the local `vercel build`
+  fail, because the builder's generated project demanded the host's Python. Vercel's default
+  is already 3.12, and Docker matches it.
+- **Verification:** `make verify URL=<deployment>` (`scripts/verify_deploy.sh`) checks:
+  - the UI shell and assets;
+  - every endpoint, plus validation 422s and the docs;
+  - cache headers;
+  - that the deployed `snapshot_id` matches `data/`;
+  - that production `/api/metrics` equals the local computation.

@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.config import Settings
+from app.http_cache import cache_headers
 from app.observability import access_log, configure_logging
 from app.service import AnalysisService
 from app.snapshot import load_snapshot
@@ -37,6 +38,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.service = AnalysisService(snapshot, settings.cache_size)
 
+    app.middleware("http")(cache_headers)
     app.middleware("http")(access_log)
     if settings.cors_origins:
         app.add_middleware(

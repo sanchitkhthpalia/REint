@@ -8,13 +8,13 @@ dependencies = [
     "httpx>=0.28",
     "pandas>=2.2",
     "pydantic>=2.10",
-    "pyarrow>=18",
     "tzdata>=2024.1",
     "uvicorn[standard]>=0.30",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "pyarrow>=18",  # snapshot builder writes the parquet archive copies (D-013)
     "pytest>=8",
     "pytest-asyncio>=0.24",
     "pytest-cov>=5",

@@ -44,8 +44,8 @@ def write_snapshot(data_dir: Path) -> None:
     actuals = pd.DataFrame({"start_time_utc": half_hours, "generation_mw": 900})
 
     files = {}
-    for name, frame in (("actuals.parquet", actuals), ("forecasts.parquet", forecasts)):
-        frame.to_parquet(data_dir / name)
+    for name, frame in (("actuals.csv.gz", actuals), ("forecasts.csv.gz", forecasts)):
+        frame.to_csv(data_dir / name, index=False, date_format="%Y-%m-%dT%H:%M:%SZ")
         files[name] = {"sha256": hashlib.sha256((data_dir / name).read_bytes()).hexdigest()}
     manifest = {
         "snapshot_id": "test-snapshot",
@@ -320,6 +320,21 @@ def test_request_id_is_returned_and_access_log_is_structured(client):
     assert line["duration_ms"] >= 0
 
 
+@pytest.mark.parametrize(
+    "path", ["/api/meta", "/api/series", "/api/metrics", "/api/metrics/by-horizon"]
+)
+def test_successful_data_responses_are_cdn_cacheable(client, path):
+    cache_control = client.get(path).headers["cache-control"]
+
+    assert "public" in cache_control
+    assert "s-maxage=86400" in cache_control
+
+
+@pytest.mark.parametrize("path", ["/api/health", "/api/series?mode=horizon", "/api/nope"])
+def test_health_errors_and_404s_are_never_cached(client, path):
+    assert client.get(path).headers["cache-control"] == "no-store"
+
+
 def test_generated_request_id_when_none_sent(client):
     assert len(client.get("/api/health").headers["X-Request-ID"]) == 32
 
@@ -341,7 +356,7 @@ def test_settings_from_env(monkeypatch, tmp_path):
 
 
 def test_tampered_snapshot_is_rejected(data_dir):
-    (data_dir / "actuals.parquet").write_bytes(b"not the file the manifest describes")
+    (data_dir / "actuals.csv.gz").write_bytes(b"not the file the manifest describes")
 
     with pytest.raises(SnapshotError, match="sha256"):
         create_app(Settings(data_dir=data_dir))

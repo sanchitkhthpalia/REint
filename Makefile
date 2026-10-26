@@ -5,7 +5,7 @@ VPY := $(VENV)/bin/python
 FRONTEND := frontend
 
 .DEFAULT_GOAL := help
-.PHONY: help setup snapshot test lint dev up down
+.PHONY: help setup snapshot test lint dev up down verify
 
 help: ## List targets
 	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -40,3 +40,7 @@ up: ## Build and start the full stack in Docker on http://localhost:8080
 
 down: ## Stop the Docker stack
 	docker compose down
+
+verify: ## Smoke-test a deployment: make verify URL=https://<app>.vercel.app
+	@test -n "$(URL)" || (echo "usage: make verify URL=https://<app>.vercel.app"; exit 2)
+	scripts/verify_deploy.sh $(URL)

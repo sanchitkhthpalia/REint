@@ -6,8 +6,9 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.py": {
-      "includeFiles": "{backend/app/**,data/**}",
-      "excludeFiles": "{backend/tests/**,backend/.venv/**,**/__pycache__/**}"
+      "maxDuration": 30,
+      "includeFiles": "{backend/app/**,data/manifest.json,data/*.csv.gz}",
+      "excludeFiles": "{frontend/**,backend/tests/**,backend/.venv/**,data/*.parquet,docs/**,scripts/**,**/__pycache__/**,**/node_modules/**}"
     }
   },
   "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }]
