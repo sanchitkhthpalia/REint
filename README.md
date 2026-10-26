@@ -7,7 +7,7 @@ the desk can act on: average error, bias, how error grows with lead time, and a 
 buffer ("hold about X MW extra to be covered in 90% of hours"). Data comes only from Elexon
 BMRS (FUELHH wind outturn and WINDFOR forecasts) for purchase decisions made in January 2026.
 
-**Live app:** _added after deployment_ · **API docs:** `/api/docs` on the same host
+**Live app:** https://reint-peach.vercel.app · **API docs:** https://reint-peach.vercel.app/api/docs
 
 ![Dashboard](docs/images/dashboard.png)
 

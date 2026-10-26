@@ -58,7 +58,14 @@ check series_h "/api/series?mode=horizon&horizon_h=6" 200 "GET /api/series?mode=
 check metrics "/api/metrics" 200 "GET /api/metrics"
 echo "       $(py metrics "f\"MAE {b['overall']['mae_mw']:.0f} MW, bias {b['overall']['bias_mw']:+.0f} MW, \" + b['buffer']['levels'][0]['message']")"
 cc="$(header metrics cache-control)"
-[[ "$cc" == *"s-maxage="* ]] && ok "metrics CDN-cacheable ($cc)" || bad "metrics cache-control: $cc"
+edge="$(header metrics x-vercel-cache)"
+# Vercel's CDN consumes s-maxage and strips it before the response reaches the client, so
+# there the x-vercel-cache header is the evidence; elsewhere (Docker) s-maxage is visible.
+if [[ "$cc" == *"s-maxage="* || -n "$edge" ]]; then
+  ok "metrics CDN-cacheable (cache-control: $cc${edge:+, x-vercel-cache: $edge})"
+else
+  bad "metrics cache-control: $cc"
+fi
 
 check byhour "/api/metrics/by-hour" 200 "GET /api/metrics/by-hour"
 [ "$(py byhour "len(b['hours'])")" = 24 ] && ok "24 hours of day" || bad "by-hour count"
