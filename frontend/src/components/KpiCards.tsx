@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { MetricsResponse } from "../api/types";
+import { P90, P95, bufferLevel } from "../lib/buffer";
 import { approxMw, formatMw, formatPct, formatSignedMw, slotWord } from "../lib/format";
 
 function Card({
@@ -29,35 +30,35 @@ function Card({
 
 export function KpiCards({ metrics }: { metrics: MetricsResponse }) {
   const { overall, buffer, coverage } = metrics;
-  const p90 = buffer.levels.find((l) => l.coverage === 0.9);
-  const p95 = buffer.levels.find((l) => l.coverage === 0.95);
+  const p90 = bufferLevel(buffer, P90);
+  const p95 = bufferLevel(buffer, P95);
   const unit = slotWord(buffer.slot_minutes);
   const bias = overall.bias_mw;
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Card
-        label="Mean absolute error"
+        label="Typical miss"
         value={formatMw(overall.mae_mw)}
-        note={`${overall.n} of ${coverage.slots} ${unit} with forecast and actual`}
+        note={`Average size of the hourly forecast error (MAE) · ${overall.n} of ${coverage.slots} ${unit} have both forecast and actual`}
       />
       <Card
-        label="Bias (forecast − actual)"
+        label="Average bias"
         value={formatSignedMw(bias)}
         note={
           bias === null
             ? undefined
-            : `${bias > 0 ? "Over-forecast" : "Under-forecast"} on average · forecast above actual in ${formatPct(buffer.shortfall_share, 0)} of ${unit}`
+            : `Forecast ${bias > 0 ? "too high" : "too low"} on average · above actual in ${formatPct(buffer.shortfall_share, 0)} of ${unit}`
         }
       />
       <Card
-        label="nMAE"
+        label="Miss vs typical output"
         value={formatPct(overall.nmae)}
-        note={`MAE as a share of mean actual wind (${formatMw(overall.mean_actual_mw)})`}
+        note={`Typical miss as a share of average wind output, ${formatMw(overall.mean_actual_mw)} (nMAE)`}
       />
       <Card
         highlight
-        label="P90 procurement buffer"
+        label="Recommended buffer (P90)"
         value={p90?.buffer_mw == null ? "–" : `${approxMw(p90.buffer_mw)} MW`}
         note={
           p90?.buffer_mw == null ? (
@@ -65,6 +66,13 @@ export function KpiCards({ metrics }: { metrics: MetricsResponse }) {
           ) : (
             <>
               Hold {approxMw(p90.buffer_mw)} MW extra to cover 90% of {unit}.
+              {p90.walk_forward_coverage != null && (
+                <>
+                  {" "}
+                  Sized only from earlier days, it covered{" "}
+                  {formatPct(p90.walk_forward_coverage, 0)}.
+                </>
+              )}
               {p95?.buffer_mw != null && (
                 <span className="text-slate-400"> P95: {approxMw(p95.buffer_mw)} MW.</span>
               )}

@@ -354,13 +354,13 @@ def test_horizon_outside_bounds_is_rejected(hours):
 def test_make_rule():
     assert make_rule("day_ahead") == DayAheadRule()
     assert make_rule(Mode.DAY_AHEAD, gate_time=time(11)) == DayAheadRule(time(11))
-    assert make_rule("horizon", horizon_hours=12) == HorizonRule(12)
-    assert make_rule("horizon", horizon_hours=12).mode is Mode.HORIZON
+    assert make_rule("horizon", horizon_h=12) == HorizonRule(12)
+    assert make_rule("horizon", horizon_h=12).mode is Mode.HORIZON
     assert DayAheadRule().mode is Mode.DAY_AHEAD
 
 
 def test_make_rule_rejects_bad_input():
-    with pytest.raises(ValueError, match="horizon_hours"):
+    with pytest.raises(ValueError, match="horizon_h"):
         make_rule("horizon")
     with pytest.raises(ValueError):
         make_rule("intraday")

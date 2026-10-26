@@ -15,8 +15,12 @@ Metric choices:
   the empirical-CDF percentile (numpy "inverted_cdf"): the smallest observed error E with
   P(error <= E) >= q. In-sample coverage is guaranteed even for small samples. The buffer is
   floored at 0: if over-forecasts are rare enough, no buffer is needed.
+- An in-sample buffer is sized with hindsight. The walk-forward check sizes each day's buffer
+  from earlier days only and reports the share of that day's slots it actually covered, which
+  is what a desk applying the rule going forward would have got.
 
 Only slots with both a forecast and an actual enter error metrics. Coverage reports the rest.
+Shares are fractions in [0, 1] throughout.
 """
 
 from __future__ import annotations
@@ -28,18 +32,14 @@ import numpy as np
 import pandas as pd
 from pydantic import AwareDatetime, BaseModel, ConfigDict
 
-from app.domain.selection import (
-    OUTPUT_COLUMNS,
-    UK_TZ,
-    DecisionRule,
-    HorizonRule,
-    select_forecasts,
-)
+from app.domain.selection import OUTPUT_COLUMNS, UK_TZ, HorizonRule, select_forecasts
 
 DISTRIBUTION_PERCENTILES = (10, 50, 90, 95, 99)
 BUFFER_COVERAGES = (0.90, 0.95)
 DEFAULT_LEAD_TIME_HORIZONS = tuple(range(1, 49))
 WORST_SLOTS = 10
+# Days of history before the walk-forward check starts sizing buffers.
+WALK_FORWARD_MIN_HISTORY_DAYS = 7
 
 
 # --- response models ---------------------------------------------------------------------
@@ -54,9 +54,9 @@ class Coverage(_Model):
     with_forecast: int
     with_actual: int
     paired: int
-    pct_with_forecast: float | None
-    pct_with_actual: float | None
-    pct_paired: float | None
+    share_with_forecast: float | None
+    share_with_actual: float | None
+    share_paired: float | None
 
 
 class ErrorStats(_Model):
@@ -84,20 +84,23 @@ class ErrorDistribution(_Model):
 
 
 class BufferLevel(_Model):
-    coverage: float  # e.g. 0.9
-    buffer_mw: float | None
+    coverage: float  # target, e.g. 0.9
+    buffer_mw: float | None  # in-sample: sized on the same period it is measured on
     message: str
+    # Share of slots covered when each day's buffer is sized from earlier days only.
+    walk_forward_coverage: float | None
 
 
 class ProcurementBuffer(_Model):
     levels: tuple[BufferLevel, ...]
-    shortfall_share: float | None  # fraction of paired slots with error > 0
+    shortfall_share: float | None  # share of paired slots with error > 0
     slot_minutes: int | None
+    walk_forward_days: int  # delivery days the walk-forward check was scored on
     method: str
 
 
 class LeadTimePoint(_Model):
-    horizon_hours: float
+    horizon_h: float
     n: int
     mean_lead_time_hours: float | None
     mae_mw: float | None
@@ -125,17 +128,6 @@ class WorstSlot(_Model):
     abs_error_mw: int
 
 
-class MetricsReport(_Model):
-    coverage: Coverage
-    overall: ErrorStats
-    distribution: ErrorDistribution
-    buffer: ProcurementBuffer
-    by_hour_of_day: tuple[HourOfDayStats, ...]
-    by_day: tuple[DayStats, ...]
-    worst_slots: tuple[WorstSlot, ...]
-    lead_time_curve: tuple[LeadTimePoint, ...]
-
-
 # --- building blocks ---------------------------------------------------------------------
 
 
@@ -151,8 +143,8 @@ def _floats(values: pd.Series) -> np.ndarray:
     return values.astype("float64").to_numpy()
 
 
-def _pct(part: int, whole: int) -> float | None:
-    return 100 * part / whole if whole else None
+def _share(part: int, whole: int) -> float | None:
+    return part / whole if whole else None
 
 
 def coverage(selected: pd.DataFrame) -> Coverage:
@@ -165,9 +157,9 @@ def coverage(selected: pd.DataFrame) -> Coverage:
         with_forecast=with_forecast,
         with_actual=with_actual,
         paired=n_paired,
-        pct_with_forecast=_pct(with_forecast, slots),
-        pct_with_actual=_pct(with_actual, slots),
-        pct_paired=_pct(n_paired, slots),
+        share_with_forecast=_share(with_forecast, slots),
+        share_with_actual=_share(with_actual, slots),
+        share_paired=_share(n_paired, slots),
     )
 
 
@@ -221,13 +213,36 @@ def _slot_word(minutes: int | None) -> str:
     return {30: "half-hours", 60: "hours"}.get(minutes, "slots") if minutes else "slots"
 
 
+def _walk_forward(
+    days: np.ndarray, err: np.ndarray, level: float, min_history_days: int
+) -> tuple[float | None, int]:
+    """Size each day's buffer from earlier days only and score it on that day.
+
+    Returns (share of scored slots covered, number of days scored). The first
+    `min_history_days` days only build history.
+    """
+    unique_days = np.unique(days)
+    covered = scored = 0
+    for day in unique_days[min_history_days:]:
+        buffer = _buffer_mw(err[days < day], level)
+        today = err[days == day]
+        covered += int((today <= buffer).sum())
+        scored += today.size
+    return (covered / scored if scored else None), max(0, len(unique_days) - min_history_days)
+
+
 def procurement_buffer(
-    selected: pd.DataFrame, coverages: Sequence[float] = BUFFER_COVERAGES
+    selected: pd.DataFrame,
+    coverages: Sequence[float] = BUFFER_COVERAGES,
+    min_history_days: int = WALK_FORWARD_MIN_HISTORY_DAYS,
 ) -> ProcurementBuffer:
-    err = _floats(paired(selected)["error_mw"])
+    pairs = paired(selected)
+    err = _floats(pairs["error_mw"])
+    days = pairs["target_time_utc"].dt.tz_convert(UK_TZ).dt.date.to_numpy()
     minutes = _slot_minutes(selected)
     word = _slot_word(minutes)
     levels = []
+    days_scored = 0
     for level in coverages:
         mw = _buffer_mw(err, level)
         message = (
@@ -236,13 +251,22 @@ def procurement_buffer(
             if mw is not None
             else "Not enough paired data to size a buffer."
         )
-        levels.append(BufferLevel(coverage=level, buffer_mw=mw, message=message))
+        walk_forward, days_scored = _walk_forward(days, err, level, min_history_days)
+        levels.append(
+            BufferLevel(
+                coverage=level,
+                buffer_mw=mw,
+                message=message,
+                walk_forward_coverage=walk_forward,
+            )
+        )
     return ProcurementBuffer(
         levels=tuple(levels),
         shortfall_share=float((err > 0).mean()) if err.size else None,
         slot_minutes=minutes,
+        walk_forward_days=days_scored,
         method="empirical quantile (inverted CDF) of signed error over all paired slots, "
-        "floored at 0",
+        "floored at 0; walk-forward check sizes each day from earlier days only",
     )
 
 
@@ -294,7 +318,7 @@ def lead_time_curve(
         has_pairs = err.size > 0
         points.append(
             LeadTimePoint(
-                horizon_hours=h,
+                horizon_h=h,
                 n=err.size,
                 mean_lead_time_hours=float(_floats(pairs["lead_time_hours"]).mean())
                 if has_pairs
@@ -305,24 +329,3 @@ def lead_time_curve(
             )
         )
     return tuple(points)
-
-
-def metrics_report(
-    targets: pd.DatetimeIndex,
-    forecasts: pd.DataFrame,
-    actuals: pd.DataFrame,
-    rule: DecisionRule,
-    lead_time_horizons: Iterable[float] = DEFAULT_LEAD_TIME_HORIZONS,
-) -> MetricsReport:
-    """Everything the UI needs for one decision rule over one set of target slots."""
-    selected = select_forecasts(targets, forecasts, actuals, rule)
-    return MetricsReport(
-        coverage=coverage(selected),
-        overall=error_stats(selected),
-        distribution=error_distribution(selected),
-        buffer=procurement_buffer(selected),
-        by_hour_of_day=by_hour_of_day(selected),
-        by_day=by_day(selected),
-        worst_slots=worst_slots(selected),
-        lead_time_curve=lead_time_curve(targets, forecasts, actuals, lead_time_horizons),
-    )

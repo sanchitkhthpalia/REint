@@ -238,7 +238,7 @@ def test_metrics_summary(client):
     assert body["overall"]["n"] == 47
     assert body["overall"]["mae_mw"] == pytest.approx(5247 / 47)
     assert body["overall"]["bias_mw"] == pytest.approx(5247 / 47)
-    assert body["coverage"]["pct_with_actual"] == pytest.approx(100 * 47 / 48)
+    assert body["coverage"]["share_with_actual"] == pytest.approx(47 / 48)
     buffer = body["buffer"]
     assert [lvl["coverage"] for lvl in buffer["levels"]] == [0.9, 0.95]
     assert buffer["levels"][0]["message"].startswith("Buy ")
@@ -261,7 +261,7 @@ def test_metrics_by_horizon(client):
     body = client.get("/api/metrics/by-horizon").json()
 
     assert (body["start"], body["end"]) == ("2026-01-15", "2026-01-16")
-    points = {p["horizon_hours"]: p for p in body["points"]}
+    points = {p["horizon_h"]: p for p in body["points"]}
     assert sorted(points) == list(range(1, 49))
     assert points[1]["n"] == 47
     assert points[1]["mae_mw"] == 4100  # 09:30 publish (5000) vs 900 actual
@@ -337,6 +337,38 @@ def test_health_errors_and_404s_are_never_cached(client, path):
 
 def test_generated_request_id_when_none_sent(client):
     assert len(client.get("/api/health").headers["X-Request-ID"]) == 32
+
+
+@pytest.mark.parametrize("bad_id", ["x" * 65, "has spaces", 'quote"injection', "new\tline"])
+def test_malformed_request_ids_are_replaced(client, bad_id):
+    returned = client.get("/api/health", headers={"X-Request-ID": bad_id}).headers["X-Request-ID"]
+
+    assert returned != bad_id
+    assert len(returned) == 32
+
+
+def test_unhandled_errors_become_logged_json_500s(client, app, monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError("selection exploded")
+
+    monkeypatch.setattr(app.state.service, "selection", boom)
+    records: list[logging.LogRecord] = []
+    handler = logging.Handler()
+    handler.emit = records.append
+    logging.getLogger("app").addHandler(handler)
+    try:
+        response = client.get("/api/metrics", headers={"X-Request-ID": "req-500"})
+    finally:
+        logging.getLogger("app").removeHandler(handler)
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error", "request_id": "req-500"}
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["X-Request-ID"] == "req-500"
+    messages = [r.getMessage() for r in records]
+    assert "unhandled error" in messages  # with traceback
+    access = next(r for r in records if r.getMessage() == "request")
+    assert access.fields["status"] == 500
 
 
 # --- configuration / snapshot integrity ----------------------------------------------------

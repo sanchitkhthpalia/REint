@@ -100,14 +100,14 @@ DecisionRule = HorizonRule | DayAheadRule
 def make_rule(
     mode: Mode | str,
     *,
-    horizon_hours: float | None = None,
+    horizon_h: float | None = None,
     gate_time: time = DEFAULT_GATE_TIME,
 ) -> DecisionRule:
     mode = Mode(mode)
     if mode is Mode.HORIZON:
-        if horizon_hours is None:
-            raise ValueError("horizon mode needs horizon_hours")
-        return HorizonRule(horizon_hours)
+        if horizon_h is None:
+            raise ValueError("horizon mode needs horizon_h")
+        return HorizonRule(horizon_h)
     return DayAheadRule(gate_time)
 
 

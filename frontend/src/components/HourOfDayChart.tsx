@@ -38,12 +38,18 @@ export function HourOfDayChart({ hours }: { hours: readonly HourOfDayStats[] }) 
             labelFormatter={(h) => `${String(h)} UK time`}
             formatter={(v, name) => {
               const value = typeof v === "number" ? v : null;
-              return name === "MAE" ? formatMw(value) : formatSignedMw(value);
+              return name === "Typical miss" ? formatMw(value) : formatSignedMw(value);
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} verticalAlign="top" />
           <ReferenceLine y={0} stroke={COLORS.axis} />
-          <Bar dataKey="mae" name="MAE" fill={COLORS.mae} fillOpacity={0.8} isAnimationActive={false} />
+          <Bar
+            dataKey="mae"
+            name="Typical miss"
+            fill={COLORS.mae}
+            fillOpacity={0.8}
+            isAnimationActive={false}
+          />
           <Line
             dataKey="bias"
             name="Bias"

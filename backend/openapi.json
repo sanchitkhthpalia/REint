@@ -22,12 +22,24 @@
           "message": {
             "title": "Message",
             "type": "string"
+          },
+          "walk_forward_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Walk Forward Coverage"
           }
         },
         "required": [
           "coverage",
           "buffer_mw",
-          "message"
+          "message",
+          "walk_forward_coverage"
         ],
         "title": "BufferLevel",
         "type": "object"
@@ -87,7 +99,7 @@
             "title": "Paired",
             "type": "integer"
           },
-          "pct_paired": {
+          "share_paired": {
             "anyOf": [
               {
                 "type": "number"
@@ -96,9 +108,9 @@
                 "type": "null"
               }
             ],
-            "title": "Pct Paired"
+            "title": "Share Paired"
           },
-          "pct_with_actual": {
+          "share_with_actual": {
             "anyOf": [
               {
                 "type": "number"
@@ -107,9 +119,9 @@
                 "type": "null"
               }
             ],
-            "title": "Pct With Actual"
+            "title": "Share With Actual"
           },
-          "pct_with_forecast": {
+          "share_with_forecast": {
             "anyOf": [
               {
                 "type": "number"
@@ -118,7 +130,7 @@
                 "type": "null"
               }
             ],
-            "title": "Pct With Forecast"
+            "title": "Share With Forecast"
           },
           "slots": {
             "title": "Slots",
@@ -138,9 +150,9 @@
           "with_forecast",
           "with_actual",
           "paired",
-          "pct_with_forecast",
-          "pct_with_actual",
-          "pct_paired"
+          "share_with_forecast",
+          "share_with_actual",
+          "share_paired"
         ],
         "title": "Coverage",
         "type": "object"
@@ -388,8 +400,8 @@
             ],
             "title": "Buffer P90 Mw"
           },
-          "horizon_hours": {
-            "title": "Horizon Hours",
+          "horizon_h": {
+            "title": "Horizon H",
             "type": "number"
           },
           "mae_mw": {
@@ -431,7 +443,7 @@
           }
         },
         "required": [
-          "horizon_hours",
+          "horizon_h",
           "n",
           "mean_lead_time_hours",
           "mae_mw",
@@ -641,12 +653,17 @@
               }
             ],
             "title": "Slot Minutes"
+          },
+          "walk_forward_days": {
+            "title": "Walk Forward Days",
+            "type": "integer"
           }
         },
         "required": [
           "levels",
           "shortfall_share",
           "slot_minutes",
+          "walk_forward_days",
           "method"
         ],
         "title": "ProcurementBuffer",

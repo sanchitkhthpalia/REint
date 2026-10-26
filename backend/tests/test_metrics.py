@@ -14,7 +14,6 @@ from app.domain.metrics import (
     error_distribution,
     error_stats,
     lead_time_curve,
-    metrics_report,
     paired,
     procurement_buffer,
     worst_slots,
@@ -83,16 +82,16 @@ def test_coverage_counts_all_slots(sel_a):
     cov = coverage(sel_a)
 
     assert (cov.slots, cov.with_forecast, cov.with_actual, cov.paired) == (7, 6, 6, 5)
-    assert cov.pct_with_forecast == pytest.approx(600 / 7)
-    assert cov.pct_with_actual == pytest.approx(600 / 7)
-    assert cov.pct_paired == pytest.approx(500 / 7)
+    assert cov.share_with_forecast == pytest.approx(6 / 7)
+    assert cov.share_with_actual == pytest.approx(6 / 7)
+    assert cov.share_paired == pytest.approx(5 / 7)
 
 
 def test_coverage_of_empty_selection_has_no_percentages():
     cov = coverage(selected([]))
 
     assert cov.slots == 0
-    assert cov.pct_with_forecast is None
+    assert cov.share_with_forecast is None
 
 
 # --- overall stats -------------------------------------------------------------------------
@@ -332,25 +331,54 @@ def test_default_lead_time_sweep_is_1_to_48_hours():
     assert (sweep[0], sweep[-1], len(sweep)) == (1, 48, 48)
 
 
-# --- report --------------------------------------------------------------------------------
+# --- walk-forward buffer check -------------------------------------------------------------
 
 
-def test_metrics_report_combines_everything_and_serialises():
-    targets, forecasts, actuals = frames(DATASET_A)
+def _days(errors_by_day: dict[str, list[int]]) -> pd.DataFrame:
+    rows = [
+        (f"{day}T{hour:02d}:00Z", 1000 + e, 1000)
+        for day, errors in errors_by_day.items()
+        for hour, e in enumerate(errors)
+    ]
+    return selected(rows)
 
-    report = metrics_report(targets, forecasts, actuals, HorizonRule(0), lead_time_horizons=[0, 1])
 
-    assert report.coverage.paired == 5
-    assert report.overall.mae_mw == pytest.approx(100)
-    assert report.distribution.signed_mw.p50 == pytest.approx(0)
-    assert report.buffer.levels[0].buffer_mw == 200
-    assert [h.hour_local for h in report.by_hour_of_day] == [0, 1, 2, 3, 4, 5, 6]
-    assert [d.delivery_date for d in report.by_day] == [date(2026, 1, 16)]
-    assert report.worst_slots[0].error_mw == 200
-    assert [p.horizon_hours for p in report.lead_time_curve] == [0, 1]
-    assert report.lead_time_curve[0].mae_mw == pytest.approx(100)
-    assert report.lead_time_curve[1].n == 0  # every forecast was published at its target
-    assert '"buffer_mw":200.0' in report.model_dump_json()
+def test_walk_forward_sizes_each_day_from_earlier_days_only():
+    sel = _days(
+        {
+            "2026-01-16": [10, 20, 30, 40],  # history only
+            "2026-01-17": [5, 50],
+            "2026-01-18": [100, 0],
+        }
+    )
+
+    buffer = procurement_buffer(sel, coverages=(0.5,), min_history_days=1)
+
+    # 17 Jan: median of [10, 20, 30, 40] (inverted CDF) = 20 -> covers 5, misses 50.
+    # 18 Jan: median of [5, 10, 20, 30, 40, 50] = 20 -> covers 0, misses 100.
+    (level,) = buffer.levels
+    assert level.walk_forward_coverage == pytest.approx(2 / 4)
+    assert buffer.walk_forward_days == 2
+    # In-sample over all 8 slots: sorted [0, 5, 10, 20, 30, 40, 50, 100] -> 20 covers 4 of 8.
+    assert level.buffer_mw == 20
+
+
+def test_walk_forward_never_uses_the_day_being_scored():
+    # If the scored day leaked into its own buffer, the 1,000 MW miss would be covered.
+    sel = _days({"2026-01-16": [10, 10], "2026-01-17": [1000]})
+
+    (level,) = procurement_buffer(sel, coverages=(0.9,), min_history_days=1).levels
+
+    assert level.walk_forward_coverage == 0.0
+
+
+def test_walk_forward_needs_enough_history():
+    sel = _days({"2026-01-16": [10], "2026-01-17": [20]})
+
+    buffer = procurement_buffer(sel, min_history_days=7)
+
+    assert buffer.walk_forward_days == 0
+    assert all(lvl.walk_forward_coverage is None for lvl in buffer.levels)
 
 
 def test_paired_requires_selection_columns():

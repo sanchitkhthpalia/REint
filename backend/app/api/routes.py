@@ -124,7 +124,7 @@ def analysis_params(q: Annotated[AnalysisQuery, Query()], service: Service) -> A
         )
     if errors:
         raise RequestValidationError(errors)
-    rule = make_rule(q.mode, horizon_hours=q.horizon_h, gate_time=q.gate_time)
+    rule = make_rule(q.mode, horizon_h=q.horizon_h, gate_time=q.gate_time)
     return Analysis(start, end, rule)
 
 

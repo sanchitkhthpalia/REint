@@ -131,6 +131,8 @@ export interface components {
             coverage: number;
             /** Message */
             message: string;
+            /** Walk Forward Coverage */
+            walk_forward_coverage: number | null;
         };
         /** ByHorizonResponse */
         ByHorizonResponse: {
@@ -157,12 +159,12 @@ export interface components {
         Coverage: {
             /** Paired */
             paired: number;
-            /** Pct Paired */
-            pct_paired: number | null;
-            /** Pct With Actual */
-            pct_with_actual: number | null;
-            /** Pct With Forecast */
-            pct_with_forecast: number | null;
+            /** Share Paired */
+            share_paired: number | null;
+            /** Share With Actual */
+            share_with_actual: number | null;
+            /** Share With Forecast */
+            share_with_forecast: number | null;
             /** Slots */
             slots: number;
             /** With Actual */
@@ -266,8 +268,8 @@ export interface components {
         LeadTimePoint: {
             /** Buffer P90 Mw */
             buffer_p90_mw: number | null;
-            /** Horizon Hours */
-            horizon_hours: number;
+            /** Horizon H */
+            horizon_h: number;
             /** Mae Mw */
             mae_mw: number | null;
             /** Mean Lead Time Hours */
@@ -334,6 +336,8 @@ export interface components {
             shortfall_share: number | null;
             /** Slot Minutes */
             slot_minutes: number | null;
+            /** Walk Forward Days */
+            walk_forward_days: number;
         };
         /** QueryEcho */
         QueryEcho: {

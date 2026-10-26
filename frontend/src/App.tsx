@@ -11,7 +11,9 @@ import { HowToRead, Methodology } from "./components/InfoPanels";
 import { KpiCards } from "./components/KpiCards";
 import { LeadTimeChart } from "./components/LeadTimeChart";
 import { Panel, QueryState } from "./components/Panel";
+import { Summary } from "./components/Summary";
 import { WorstMissesTable } from "./components/WorstMissesTable";
+import { P90, bufferLevel } from "./lib/buffer";
 import { defaultsFromMeta, toAnalysisQuery, toRangeQuery } from "./lib/filters";
 import { formatDay } from "./lib/format";
 import { useDebounced } from "./lib/useDebounced";
@@ -43,6 +45,9 @@ export default function App() {
   );
 }
 
+// Wait for the filters to settle so dragging the horizon slider sends one request, not 48.
+const FETCH_DEBOUNCE_MS = 250;
+
 const noPairs = (d: { coverage: { paired: number } }) => d.coverage.paired === 0;
 
 function dayAheadLeadRange(series: SeriesResponse | undefined): [number, number] | null {
@@ -54,8 +59,7 @@ function Dashboard({ meta }: { meta: MetaResponse }) {
   const { defaults, bounds } = useMemo(() => defaultsFromMeta(meta), [meta]);
   const { filters, update, reset } = useUrlFilters(defaults, bounds);
 
-  // Fetch on settled filters so dragging the horizon slider doesn't fire a request per step.
-  const settled = useDebounced(filters, 250);
+  const settled = useDebounced(filters, FETCH_DEBOUNCE_MS);
   const analysis = useMemo(() => toAnalysisQuery(settled), [settled]);
   const range = useMemo(() => toRangeQuery(settled), [settled]);
 
@@ -68,8 +72,7 @@ function Dashboard({ meta }: { meta: MetaResponse }) {
     () => series.data?.points.flatMap((p) => (p.error_mw === null ? [] : [p.error_mw])) ?? [],
     [series.data],
   );
-  const bufferP90 =
-    metrics.data?.buffer.levels.find((l) => l.coverage === 0.9)?.buffer_mw ?? null;
+  const bufferP90 = metrics.data ? (bufferLevel(metrics.data.buffer, P90)?.buffer_mw ?? null) : null;
   const period = `${formatDay(settled.start)} – ${formatDay(settled.end)}`;
   const emptyMessage = "No slots with both a forecast and an actual for this selection.";
 
@@ -78,8 +81,13 @@ function Dashboard({ meta }: { meta: MetaResponse }) {
       <Header meta={meta} />
       <Controls filters={filters} bounds={bounds} onChange={update} onReset={reset} />
 
-      <QueryState query={metrics} height={112} isEmpty={noPairs} emptyMessage={emptyMessage}>
-        {(data) => <KpiCards metrics={data} />}
+      <QueryState query={metrics} height={170} isEmpty={noPairs} emptyMessage={emptyMessage}>
+        {(data) => (
+          <div className="flex flex-col gap-3">
+            <Summary metrics={data} />
+            <KpiCards metrics={data} />
+          </div>
+        )}
       </QueryState>
 
       <Panel
@@ -92,7 +100,7 @@ function Dashboard({ meta }: { meta: MetaResponse }) {
       </Panel>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Panel title="Error vs forecast horizon" subtitle="Accuracy decays with lead time">
+        <Panel title="The earlier you decide, the bigger the miss" subtitle="Error by hours ahead">
           <QueryState query={byHorizon} height={256}>
             {(data) => (
               <LeadTimeChart
@@ -104,7 +112,7 @@ function Dashboard({ meta }: { meta: MetaResponse }) {
             )}
           </QueryState>
         </Panel>
-        <Panel title="Error by hour of day" subtitle="UK time · MAE bars, bias line">
+        <Panel title="When in the day it misses most" subtitle="UK time · bars: typical miss · line: bias">
           <QueryState
             query={byHour}
             height={256}
@@ -114,7 +122,7 @@ function Dashboard({ meta }: { meta: MetaResponse }) {
             {(data) => <HourOfDayChart hours={data.hours} />}
           </QueryState>
         </Panel>
-        <Panel title="Signed error distribution" subtitle="Forecast − actual, MW">
+        <Panel title="How big the misses were" subtitle="Hours by forecast − actual · red: too high">
           <QueryState query={series} height={256} isEmpty={noPairs} emptyMessage={emptyMessage}>
             {() => <ErrorHistogram errors={errors} bufferP90={bufferP90} />}
           </QueryState>
