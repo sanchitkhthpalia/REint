@@ -161,7 +161,37 @@ Each entry: the decision, why, and what would change it. Facts about the data li
   - Vercel: `api/index.py` re-exports the same app. `vercel.json` rewrites `/api/*` to it and
     bundles `backend/app/**` and `data/**`. Runtime dependencies are pinned in the root
     `requirements.txt`.
+- **Frontend deploy:** Vercel builds `frontend/` (`npm ci && npm run build`) and serves
+  `frontend/dist` statically. The SPA calls same-origin `/api`, so production needs no CORS.
 - **Risk (unverified until first deploy):** pyarrow, pandas and numpy are about 245 MB
   installed, which may exceed Vercel's Python function size limit. Fallback: have
   `build_snapshot.py` also write a compact JSON/CSV copy, and drop pyarrow from
   `requirements.txt`.
+
+## D-011: Frontend
+- **Stack:** Vite, React 19, TypeScript (strict), Tailwind v4, TanStack Query and Recharts.
+  - Recharts is enough because a month is 744 hourly points per series, about 1.5k marks per
+    chart, rendered without animation. ECharts' canvas renderer only pays off at much higher
+    point counts.
+- **Typed client:** `backend/openapi.json` is exported from FastAPI with
+  `scripts/export_openapi.py`, and `npm run gen:api` turns it into `src/api/schema.ts`. Request
+  and response types therefore come from the backend models rather than being hand-copied.
+- **Shareable views:** filters live in the URL (`start`, `end`, `mode`, `horizon_h`,
+  `gate_time`), and only non-default values are written. Invalid or out-of-range URL values
+  fall back to defaults rather than producing an error page.
+- **Fetching:** requests use filters debounced by 250 ms, so dragging the horizon slider sends
+  one request. `keepPreviousData` keeps the last chart visible, dimmed, while a new one loads.
+  Results never go stale in a session because the snapshot is immutable.
+- **Wording:** the buffer card says "Hold ~X MW extra to cover 90% of hours", rounded to the
+  nearest 10 MW. The unit follows the API's `slot_minutes` (D-009), so it would read
+  "half-hours" on a 30-minute grid.
+- **Gate options:** 07:00 to 12:00, including 09:20 and 09:50 labelled as the EPEX and N2EX GB
+  auction closures. A custom value from a shared URL is still shown.
+- **Accessibility:**
+  - Dark theme with text at least slate-400 on slate-900.
+  - A blue/amber pair for actual and forecast, which stays distinguishable for common
+    colour-vision deficiencies.
+  - Error colour is backed by a +/− sign in text.
+  - Charts carry aria-labels, and the table has a caption and header scopes.
+- **Times:** shown in Europe/London. Chart ticks fall on UK midnights, or every 6 h for ranges
+  of three days or less.

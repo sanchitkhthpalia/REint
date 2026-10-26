@@ -1,0 +1,1354 @@
+{
+  "components": {
+    "schemas": {
+      "BufferLevel": {
+        "additionalProperties": false,
+        "properties": {
+          "buffer_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buffer Mw"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "number"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "coverage",
+          "buffer_mw",
+          "message"
+        ],
+        "title": "BufferLevel",
+        "type": "object"
+      },
+      "ByHorizonResponse": {
+        "properties": {
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/LeadTimePoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "points"
+        ],
+        "title": "ByHorizonResponse",
+        "type": "object"
+      },
+      "ByHourResponse": {
+        "properties": {
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/HourOfDayStats"
+            },
+            "title": "Hours",
+            "type": "array"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryEcho"
+          }
+        },
+        "required": [
+          "query",
+          "hours"
+        ],
+        "title": "ByHourResponse",
+        "type": "object"
+      },
+      "Coverage": {
+        "additionalProperties": false,
+        "properties": {
+          "paired": {
+            "title": "Paired",
+            "type": "integer"
+          },
+          "pct_paired": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Paired"
+          },
+          "pct_with_actual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct With Actual"
+          },
+          "pct_with_forecast": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct With Forecast"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "with_actual": {
+            "title": "With Actual",
+            "type": "integer"
+          },
+          "with_forecast": {
+            "title": "With Forecast",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slots",
+          "with_forecast",
+          "with_actual",
+          "paired",
+          "pct_with_forecast",
+          "pct_with_actual",
+          "pct_paired"
+        ],
+        "title": "Coverage",
+        "type": "object"
+      },
+      "DateRange": {
+        "properties": {
+          "first_delivery_day": {
+            "format": "date",
+            "title": "First Delivery Day",
+            "type": "string"
+          },
+          "last_delivery_day": {
+            "format": "date",
+            "title": "Last Delivery Day",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "first_delivery_day",
+          "last_delivery_day",
+          "timezone"
+        ],
+        "title": "DateRange",
+        "type": "object"
+      },
+      "DayStats": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_date": {
+            "format": "date",
+            "title": "Delivery Date",
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ErrorStats"
+          }
+        },
+        "required": [
+          "delivery_date",
+          "stats"
+        ],
+        "title": "DayStats",
+        "type": "object"
+      },
+      "Defaults": {
+        "properties": {
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "gate_time": {
+            "format": "time",
+            "title": "Gate Time",
+            "type": "string"
+          },
+          "horizon_h": {
+            "title": "Horizon H",
+            "type": "number"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/Mode"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "mode",
+          "gate_time",
+          "horizon_h"
+        ],
+        "title": "Defaults",
+        "type": "object"
+      },
+      "ErrorDistribution": {
+        "additionalProperties": false,
+        "properties": {
+          "absolute_mw": {
+            "$ref": "#/components/schemas/Percentiles"
+          },
+          "signed_mw": {
+            "$ref": "#/components/schemas/Percentiles"
+          }
+        },
+        "required": [
+          "signed_mw",
+          "absolute_mw"
+        ],
+        "title": "ErrorDistribution",
+        "type": "object"
+      },
+      "ErrorStats": {
+        "additionalProperties": false,
+        "description": "Error summary for a set of pairs. Values are None when there are no pairs.",
+        "properties": {
+          "bias_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bias Mw"
+          },
+          "mae_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae Mw"
+          },
+          "mean_actual_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Actual Mw"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "nmae": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nmae"
+          },
+          "rmse_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rmse Mw"
+          }
+        },
+        "required": [
+          "n",
+          "mae_mw",
+          "rmse_mw",
+          "bias_mw",
+          "mean_actual_mw",
+          "nmae"
+        ],
+        "title": "ErrorStats",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "cache": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Cache",
+            "type": "object"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "snapshot_id",
+          "cache"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "HourOfDayStats": {
+        "additionalProperties": false,
+        "properties": {
+          "hour_local": {
+            "title": "Hour Local",
+            "type": "integer"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ErrorStats"
+          }
+        },
+        "required": [
+          "hour_local",
+          "stats"
+        ],
+        "title": "HourOfDayStats",
+        "type": "object"
+      },
+      "LeadTimePoint": {
+        "additionalProperties": false,
+        "properties": {
+          "buffer_p90_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buffer P90 Mw"
+          },
+          "horizon_hours": {
+            "title": "Horizon Hours",
+            "type": "number"
+          },
+          "mae_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae Mw"
+          },
+          "mean_lead_time_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Lead Time Hours"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "p90_abs_error_mw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90 Abs Error Mw"
+          }
+        },
+        "required": [
+          "horizon_hours",
+          "n",
+          "mean_lead_time_hours",
+          "mae_mw",
+          "p90_abs_error_mw",
+          "buffer_p90_mw"
+        ],
+        "title": "LeadTimePoint",
+        "type": "object"
+      },
+      "Limits": {
+        "properties": {
+          "horizon_h_max": {
+            "title": "Horizon H Max",
+            "type": "number"
+          },
+          "horizon_h_min": {
+            "title": "Horizon H Min",
+            "type": "number"
+          }
+        },
+        "required": [
+          "horizon_h_min",
+          "horizon_h_max"
+        ],
+        "title": "Limits",
+        "type": "object"
+      },
+      "MetaResponse": {
+        "properties": {
+          "date_range": {
+            "$ref": "#/components/schemas/DateRange"
+          },
+          "defaults": {
+            "$ref": "#/components/schemas/Defaults"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "snapshot": {
+            "additionalProperties": true,
+            "title": "Snapshot",
+            "type": "object"
+          }
+        },
+        "required": [
+          "date_range",
+          "defaults",
+          "limits",
+          "snapshot"
+        ],
+        "title": "MetaResponse",
+        "type": "object"
+      },
+      "MetricsResponse": {
+        "properties": {
+          "buffer": {
+            "$ref": "#/components/schemas/ProcurementBuffer"
+          },
+          "by_day": {
+            "items": {
+              "$ref": "#/components/schemas/DayStats"
+            },
+            "title": "By Day",
+            "type": "array"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "distribution": {
+            "$ref": "#/components/schemas/ErrorDistribution"
+          },
+          "overall": {
+            "$ref": "#/components/schemas/ErrorStats"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryEcho"
+          },
+          "worst_slots": {
+            "items": {
+              "$ref": "#/components/schemas/WorstSlot"
+            },
+            "title": "Worst Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query",
+          "coverage",
+          "overall",
+          "distribution",
+          "buffer",
+          "by_day",
+          "worst_slots"
+        ],
+        "title": "MetricsResponse",
+        "type": "object"
+      },
+      "Mode": {
+        "enum": [
+          "horizon",
+          "day_ahead"
+        ],
+        "title": "Mode",
+        "type": "string"
+      },
+      "Percentiles": {
+        "additionalProperties": false,
+        "properties": {
+          "p10": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P10"
+          },
+          "p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50"
+          },
+          "p90": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90"
+          },
+          "p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95"
+          },
+          "p99": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P99"
+          }
+        },
+        "required": [
+          "p10",
+          "p50",
+          "p90",
+          "p95",
+          "p99"
+        ],
+        "title": "Percentiles",
+        "type": "object"
+      },
+      "ProcurementBuffer": {
+        "additionalProperties": false,
+        "properties": {
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/BufferLevel"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "shortfall_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shortfall Share"
+          },
+          "slot_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Minutes"
+          }
+        },
+        "required": [
+          "levels",
+          "shortfall_share",
+          "slot_minutes",
+          "method"
+        ],
+        "title": "ProcurementBuffer",
+        "type": "object"
+      },
+      "QueryEcho": {
+        "properties": {
+          "cutoff_rule": {
+            "title": "Cutoff Rule",
+            "type": "string"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "gate_time": {
+            "anyOf": [
+              {
+                "format": "time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Time"
+          },
+          "horizon_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon H"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/Mode"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "mode",
+          "horizon_h",
+          "gate_time",
+          "cutoff_rule"
+        ],
+        "title": "QueryEcho",
+        "type": "object"
+      },
+      "SeriesPoint": {
+        "properties": {
+          "actual_mw": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Mw"
+          },
+          "cutoff_utc": {
+            "format": "date-time",
+            "title": "Cutoff Utc",
+            "type": "string"
+          },
+          "error_mw": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Mw"
+          },
+          "forecast_mw": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Mw"
+          },
+          "lead_time_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Time Hours"
+          },
+          "publish_time_utc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publish Time Utc"
+          },
+          "target_time_utc": {
+            "format": "date-time",
+            "title": "Target Time Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_time_utc",
+          "cutoff_utc",
+          "actual_mw",
+          "forecast_mw",
+          "publish_time_utc",
+          "lead_time_hours",
+          "error_mw"
+        ],
+        "title": "SeriesPoint",
+        "type": "object"
+      },
+      "SeriesResponse": {
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/SeriesPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryEcho"
+          }
+        },
+        "required": [
+          "query",
+          "coverage",
+          "points"
+        ],
+        "title": "SeriesResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorstSlot": {
+        "additionalProperties": false,
+        "properties": {
+          "abs_error_mw": {
+            "title": "Abs Error Mw",
+            "type": "integer"
+          },
+          "actual_mw": {
+            "title": "Actual Mw",
+            "type": "integer"
+          },
+          "error_mw": {
+            "title": "Error Mw",
+            "type": "integer"
+          },
+          "forecast_mw": {
+            "title": "Forecast Mw",
+            "type": "integer"
+          },
+          "lead_time_hours": {
+            "title": "Lead Time Hours",
+            "type": "number"
+          },
+          "publish_time_utc": {
+            "format": "date-time",
+            "title": "Publish Time Utc",
+            "type": "string"
+          },
+          "target_time_utc": {
+            "format": "date-time",
+            "title": "Target Time Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_time_utc",
+          "publish_time_utc",
+          "lead_time_hours",
+          "forecast_mw",
+          "actual_mw",
+          "error_mw",
+          "abs_error_mw"
+        ],
+        "title": "WorstSlot",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Day-ahead wind forecasts available at decision time, and their error against actual generation (Elexon BMRS WINDFOR / FUELHH).",
+    "title": "Wind Forecast Monitor API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "operationId": "meta_api_meta_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Meta"
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "description": "Accuracy summary and procurement buffer recommendation for the selected forecasts.",
+        "operationId": "summary_metrics_api_metrics_get",
+        "parameters": [
+          {
+            "description": "First UK delivery day, YYYY-MM-DD.",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "First UK delivery day, YYYY-MM-DD.",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+              "title": "End"
+            }
+          },
+          {
+            "description": "day_ahead: latest forecast published by gate_time on D-1 (UK). horizon: latest forecast published at least horizon_h hours before each slot.",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Mode",
+              "default": "day_ahead",
+              "description": "day_ahead: latest forecast published by gate_time on D-1 (UK). horizon: latest forecast published at least horizon_h hours before each slot."
+            }
+          },
+          {
+            "description": "Hours between publish and slot start. Required when mode=horizon.",
+            "in": "query",
+            "name": "horizon_h",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 48.0,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hours between publish and slot start. Required when mode=horizon.",
+              "title": "Horizon H"
+            }
+          },
+          {
+            "description": "Day-ahead decision gate, Europe/London wall-clock time, HH:MM.",
+            "in": "query",
+            "name": "gate_time",
+            "required": false,
+            "schema": {
+              "default": "09:00:00",
+              "description": "Day-ahead decision gate, Europe/London wall-clock time, HH:MM.",
+              "format": "time",
+              "title": "Gate Time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summary Metrics"
+      }
+    },
+    "/api/metrics/by-horizon": {
+      "get": {
+        "description": "Lead-time decay curve: horizon mode re-run for H = 1..48 h.",
+        "operationId": "by_horizon_api_metrics_by_horizon_get",
+        "parameters": [
+          {
+            "description": "First UK delivery day, YYYY-MM-DD.",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "First UK delivery day, YYYY-MM-DD.",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ByHorizonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "By Horizon"
+      }
+    },
+    "/api/metrics/by-hour": {
+      "get": {
+        "description": "Error statistics by hour of day (Europe/London).",
+        "operationId": "by_hour_api_metrics_by_hour_get",
+        "parameters": [
+          {
+            "description": "First UK delivery day, YYYY-MM-DD.",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "First UK delivery day, YYYY-MM-DD.",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+              "title": "End"
+            }
+          },
+          {
+            "description": "day_ahead: latest forecast published by gate_time on D-1 (UK). horizon: latest forecast published at least horizon_h hours before each slot.",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Mode",
+              "default": "day_ahead",
+              "description": "day_ahead: latest forecast published by gate_time on D-1 (UK). horizon: latest forecast published at least horizon_h hours before each slot."
+            }
+          },
+          {
+            "description": "Hours between publish and slot start. Required when mode=horizon.",
+            "in": "query",
+            "name": "horizon_h",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 48.0,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hours between publish and slot start. Required when mode=horizon.",
+              "title": "Horizon H"
+            }
+          },
+          {
+            "description": "Day-ahead decision gate, Europe/London wall-clock time, HH:MM.",
+            "in": "query",
+            "name": "gate_time",
+            "required": false,
+            "schema": {
+              "default": "09:00:00",
+              "description": "Day-ahead decision gate, Europe/London wall-clock time, HH:MM.",
+              "format": "time",
+              "title": "Gate Time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ByHourResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "By Hour"
+      }
+    },
+    "/api/series": {
+      "get": {
+        "description": "Per hourly slot: actual, the forecast available at the cutoff, its publish time,\nlead time and error (forecast - actual). Missing values are null, never dropped.",
+        "operationId": "series_api_series_get",
+        "parameters": [
+          {
+            "description": "First UK delivery day, YYYY-MM-DD.",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "First UK delivery day, YYYY-MM-DD.",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Last UK delivery day (inclusive), YYYY-MM-DD.",
+              "title": "End"
+            }
+          },
+          {
+            "description": "day_ahead: latest forecast published by gate_time on D-1 (UK). horizon: latest forecast published at least horizon_h hours before each slot.",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Mode",
+              "default": "day_ahead",
+              "description": "day_ahead: latest forecast published by gate_time on D-1 (UK). horizon: latest forecast published at least horizon_h hours before each slot."
+            }
+          },
+          {
+            "description": "Hours between publish and slot start. Required when mode=horizon.",
+            "in": "query",
+            "name": "horizon_h",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 48.0,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hours between publish and slot start. Required when mode=horizon.",
+              "title": "Horizon H"
+            }
+          },
+          {
+            "description": "Day-ahead decision gate, Europe/London wall-clock time, HH:MM.",
+            "in": "query",
+            "name": "gate_time",
+            "required": false,
+            "schema": {
+              "default": "09:00:00",
+              "description": "Day-ahead decision gate, Europe/London wall-clock time, HH:MM.",
+              "format": "time",
+              "title": "Gate Time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Series"
+      }
+    }
+  }
+}
