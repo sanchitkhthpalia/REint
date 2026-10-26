@@ -195,3 +195,26 @@ Each entry: the decision, why, and what would change it. Facts about the data li
   - Charts carry aria-labels, and the table has a caption and header scopes.
 - **Times:** shown in Europe/London. Chart ticks fall on UK midnights, or every 6 h for ranges
   of three days or less.
+
+## D-012: Containers
+- **Command:** `docker compose up --build`, or `make up`, serves the full app on
+  http://localhost:8080.
+  - nginx serves the built SPA and proxies `/api/*` to the backend over the compose network.
+  - The browser sees one origin, so CORS is disabled (`CORS_ORIGINS=""`).
+- **Backend image** (`backend/Dockerfile`, build context = repo root):
+  - Multi-stage `python:3.12-slim`. The build stage installs the pinned `requirements.txt`
+    (shared with Vercel) plus uvicorn into `/opt/venv`.
+  - The runtime stage copies only the venv, `backend/app` and `data/`, and runs as uid 10001.
+  - The healthcheck uses Python's urllib, because slim has no curl.
+  - The image is about 700 MB, almost all pandas/pyarrow/numpy (see the D-010 size risk).
+- **Frontend image** (`frontend/Dockerfile`):
+  - `node:22-alpine` build, then `nginxinc/nginx-unprivileged` (non-root, port 8080).
+  - SPA fallback; immutable caching for hashed assets; `no-cache` for `index.html`; gzip.
+  - `/healthz` endpoint.
+- **Startup order:** the frontend waits for `backend: service_healthy`.
+- **nginx re-resolves `backend` through Docker DNS** (`resolver 127.0.0.11` plus a variable
+  upstream). A static `proxy_pass http://backend:8000` is resolved once at startup and returned
+  502s after the backend was recreated on a new IP. Verified by recreating the backend on a
+  different address with the frontend still running.
+- **Log noise:** healthcheck requests to `/api/health` are logged at DEBUG, so the 15-second
+  probes don't drown the INFO access log.

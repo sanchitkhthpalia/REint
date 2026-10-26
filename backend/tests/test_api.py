@@ -306,7 +306,8 @@ def test_request_id_is_returned_and_access_log_is_structured(client):
     handler.emit = records.append
     logging.getLogger("app").addHandler(handler)
     try:
-        response = client.get("/api/health", headers={"X-Request-ID": "abc123"})
+        response = client.get("/api/meta", headers={"X-Request-ID": "abc123"})
+        client.get("/api/health")  # healthcheck traffic is logged at DEBUG, filtered at INFO
     finally:
         logging.getLogger("app").removeHandler(handler)
 
@@ -314,7 +315,8 @@ def test_request_id_is_returned_and_access_log_is_structured(client):
     (record,) = [r for r in records if r.getMessage() == "request"]
     line = json.loads(JsonFormatter().format(record))
     assert line["request_id"] == "abc123"
-    assert (line["method"], line["path"], line["status"]) == ("GET", "/api/health", 200)
+    assert (line["level"], line["method"], line["path"]) == ("INFO", "GET", "/api/meta")
+    assert line["status"] == 200
     assert line["duration_ms"] >= 0
 
 

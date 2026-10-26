@@ -1,0 +1,22 @@
+# Full app on http://localhost:8080:  docker compose up --build
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: "" # browser traffic arrives same-origin via nginx
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

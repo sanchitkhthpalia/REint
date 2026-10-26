@@ -15,6 +15,9 @@ from fastapi import Request, Response
 
 logger = logging.getLogger("app")
 
+# Container healthchecks hit this every few seconds; keep them out of INFO logs.
+QUIET_PATHS = frozenset({"/api/health"})
+
 
 class JsonFormatter(logging.Formatter):
     """One JSON object per line. Structured fields go in `extra={"fields": {...}}`."""
@@ -47,7 +50,9 @@ async def access_log(
     started = time.perf_counter()
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
-    logger.info(
+    level = logging.DEBUG if request.url.path in QUIET_PATHS else logging.INFO
+    logger.log(
+        level,
         "request",
         extra={
             "fields": {

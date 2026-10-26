@@ -1,0 +1,19 @@
+# Build context for backend/Dockerfile is the repo root; it only needs
+# requirements.txt, backend/app and data/.
+.git
+.github
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+**/node_modules
+frontend
+backend/tests
+backend/*.egg-info
+docs
+scripts
+api
+.env
+.env.*
