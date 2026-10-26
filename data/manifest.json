@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "snapshot_id": "2d166cc95d4e9cc6",
-  "fetched_at_utc": "2026-10-26T14:57:25.614383Z",
+  "snapshot_id": "f820b55f1d77aa3a",
+  "fetched_at_utc": "2026-10-26T15:03:48.580060Z",
   "source": {
     "base_url": "https://data.elexon.co.uk/bmrs/api/v1",
     "datasets": [
@@ -23,7 +23,7 @@
     ],
     "windfor_publish_window_utc": [
       "2025-12-30T00:00:00Z",
-      "2026-02-01T00:00:00Z"
+      "2026-02-02T00:00:00Z"
     ],
     "forecast_lookback_days": 3
   },
@@ -121,9 +121,9 @@
         "url": "https://data.elexon.co.uk/bmrs/api/v1/datasets/WINDFOR/stream",
         "params": {
           "publishDateTimeFrom": "2026-01-27T00:00:00Z",
-          "publishDateTimeTo": "2026-02-01T00:00:00Z"
+          "publishDateTimeTo": "2026-02-02T00:00:00Z"
         },
-        "rows": 2920,
+        "rows": 3504,
         "attempts": 1
       }
     ]
@@ -138,13 +138,13 @@
       "sha256": "70811c70812c62b9d25681a9bd62da43307d4d6c9aba7a577c556fd84793f1b4"
     },
     "forecasts.parquet": {
-      "rows": 19272,
+      "rows": 19856,
       "columns": {
         "publish_time_utc": "timestamp[us, tz=UTC]",
         "start_time_utc": "timestamp[us, tz=UTC]",
         "generation_mw": "int64"
       },
-      "sha256": "82ca2359daa7fb457f666d4d8176a56da2fcdb8bd9c3e1dbbaed23065540cc9e"
+      "sha256": "fcd79861ad8863dffc882a91e4f40d2af7645c8d38c6342ecfb032caf9e116d2"
     }
   },
   "data_quality": {
@@ -156,12 +156,12 @@
       "missing_slots": []
     },
     "forecasts": {
-      "raw_rows": 19272,
+      "raw_rows": 19856,
       "duplicates_removed": 0,
       "off_hour_rows": 0,
-      "publish_count": 264,
+      "publish_count": 272,
       "rows_per_publish": {
-        "73": 264
+        "73": 272
       },
       "off_schedule_publish_times": [
         "2026-01-15T12:25:00Z"

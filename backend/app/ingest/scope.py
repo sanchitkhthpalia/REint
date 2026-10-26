@@ -53,9 +53,10 @@ class SnapshotScope:
 
     @property
     def forecast_publish_window_utc(self) -> tuple[datetime, datetime]:
-        """WINDFOR publishTime range: from lookback before the first decision day to the
-        end of the last decision day (D-1 of the last delivery day)."""
+        """WINDFOR publishTime range: from lookback before the first delivery day to the end
+        of the delivery window. Day-ahead mode only needs publishes up to D-1, but horizon
+        mode with small H needs publishes made during the delivery day itself."""
         return (
             uk_midnight_utc(self.first_delivery_day - timedelta(days=self.forecast_lookback_days)),
-            uk_midnight_utc(self.last_delivery_day),
+            self.delivery_window_utc[1],
         )

@@ -153,7 +153,7 @@ from 2 Jan to 1 Feb 2026. All of January is GMT, so UK local = UTC.
 | Data | Request | Resulting range |
 |---|---|---|
 | Actuals | FUELHH `settlementDateFrom=2026-01-02&settlementDateTo=2026-02-01&fuelType=WIND` | startTime `2026-01-02T00:00Z` .. `2026-02-01T23:30Z` (1,488 rows) |
-| Forecasts | WINDFOR `publishDateTimeFrom=2025-12-30T00:00:00Z&publishDateTimeTo=2026-02-01T00:00:00Z` | publishTime `2025-12-30T02:30Z` .. `2026-01-31T22:30Z` (264 publishes, 19,272 rows). startTime `2025-12-29T21:00Z` .. `2026-02-02T21:00Z` |
+| Forecasts | WINDFOR `publishDateTimeFrom=2025-12-30T00:00:00Z&publishDateTimeTo=2026-02-02T00:00:00Z` | publishTime `2025-12-30T02:30Z` .. `2026-02-01T22:30Z` (272 publishes, 19,856 rows). Extended to the end of the delivery window so horizon mode has same-day publishes (DECISIONS D-005) |
 
 - **Why start forecasts on 30 Dec:**
   - A publish on day X covers startTimes up to X+2 21:00. The 31 Dec publishes therefore
@@ -173,11 +173,11 @@ from 2 Jan to 1 Feb 2026. All of January is GMT, so UK local = UTC.
 
 ## 6. Open questions
 
-1. **Decision cutoff time on D-1.**
-   - The data does not define it. The GB day-ahead auction gate closure is commonly cited as
-     about 11:00 UK, but that is unverified domain knowledge, not Elexon data.
-   - The cutoff decides which of the 8 daily publishes counts as "available at decision time".
-   - Default to be chosen and justified in `docs/DECISIONS.md`.
+1. **Decision cutoff time on D-1.** Resolved as a configurable assumption: 09:00 UK
+   (DECISIONS D-007).
+   - The "about 11:00" figure first written here was out of date. 11:00 was the pre-Brexit
+     gate time. Since 2021 the GB auctions close at about 09:20 (EPEX) and 09:50 (N2EX).
+   - The client's real internal deadline should still be confirmed.
 2. **What does WINDFOR `HH:00` represent?** It could be a point value, the average over
    `HH:00` to `HH+1:00`, or something else. Neither the spec nor the data says. This drives
    the alignment choice in §3.

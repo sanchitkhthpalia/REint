@@ -14,7 +14,8 @@ def test_default_scope_matches_data_notes():
 
     assert scope.settlement_dates == (date(2026, 1, 2), date(2026, 2, 1))
     assert scope.delivery_window_utc == (utc(2026, 1, 2), utc(2026, 2, 2))
-    assert scope.forecast_publish_window_utc == (utc(2025, 12, 30), utc(2026, 2, 1))
+    # Ends with the delivery window so horizon mode has same-day publishes for 1 Feb.
+    assert scope.forecast_publish_window_utc == (utc(2025, 12, 30), utc(2026, 2, 2))
 
 
 def test_bst_scope_uses_uk_local_midnight():
