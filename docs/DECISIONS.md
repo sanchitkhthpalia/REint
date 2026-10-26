@@ -133,3 +133,35 @@ Each entry: the decision, why, and what would change it. Facts about the data li
   - If WINDFOR and FUELHH cover different wind fleets (DATA_NOTES open question 4), part of
     that bias is a definitional gap, not forecast error.
   - This must be stated wherever the buffer is shown.
+
+## D-010: HTTP API shape and runtime
+- **Endpoints:** `/api/health`, `/api/meta`, `/api/series`, `/api/metrics`,
+  `/api/metrics/by-hour`, `/api/metrics/by-horizon`. Docs are at `/api/docs`.
+- **Parameters:**
+  - `start`/`end` are UK delivery days, inclusive. They default to the whole snapshot and must
+    lie within it.
+  - `mode=day_ahead` (default, with `gate_time`) or `mode=horizon` (with `horizon_h`, 0 to 48).
+  - Unknown parameters are rejected, so a typo like `horizon=6` fails loudly instead of being
+    ignored.
+  - Every 422 uses FastAPI's standard error format, located at the offending parameter, and
+    reports all problems at once.
+- **Caching:** the snapshot is immutable, so selections and lead-time curves are LRU-cached in
+  process, keyed on (start, end, rule). Size is set by `CACHE_SIZE`, default 128. On Vercel the
+  cache lives only as long as a warm instance; that is acceptable because a cold month query
+  takes about 60 ms, and the 48-horizon curve about 0.4 s.
+- **Snapshot integrity:** the app checks parquet sha256 hashes against `manifest.json` at
+  startup and refuses to start on a mismatch.
+- **Logging:** JSON lines on stdout, with one access-log line per request (request id, path,
+  query, status, duration) and an `X-Request-ID` response header.
+- **CORS:** set by the `CORS_ORIGINS` env var (comma-separated), GET only. Default is the Vite
+  dev server, `http://localhost:5173`. An empty value disables CORS for same-origin
+  deployments.
+- **Two runtimes, one app:**
+  - Docker/local: `uvicorn app.main:app` from `backend/`.
+  - Vercel: `api/index.py` re-exports the same app. `vercel.json` rewrites `/api/*` to it and
+    bundles `backend/app/**` and `data/**`. Runtime dependencies are pinned in the root
+    `requirements.txt`.
+- **Risk (unverified until first deploy):** pyarrow, pandas and numpy are about 245 MB
+  installed, which may exceed Vercel's Python function size limit. Fallback: have
+  `build_snapshot.py` also write a compact JSON/CSV copy, and drop pyarrow from
+  `requirements.txt`.

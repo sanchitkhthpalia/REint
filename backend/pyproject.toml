@@ -4,11 +4,13 @@ version = "0.1.0"
 description = "Backend for the day-ahead wind forecast monitor (Elexon BMRS FUELHH + WINDFOR)."
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.115",
     "httpx>=0.28",
     "pandas>=2.2",
     "pydantic>=2.10",
     "pyarrow>=18",
     "tzdata>=2024.1",
+    "uvicorn[standard]>=0.30",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +32,10 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    # Starlette nudges TestClient users towards httpx2; httpx still works and is our dependency.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
 
 [tool.ruff]
 line-length = 100
