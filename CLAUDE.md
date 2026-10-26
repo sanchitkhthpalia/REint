@@ -4,7 +4,7 @@ Persistent brief for this project. Source of truth for the task: `docs/ASSIGNMEN
 
 ## 1. Product goal
 - Web app for the day-ahead power buying team of a UK utility.
-- (a) Show the latest wind forecast that was actually available at decision time, per 30-min slot.
+- (a) Show the latest wind forecast that was actually available at decision time, per hourly slot (WINDFOR is hourly; see D-003).
 - (b) Quantify forecast error (vs actual wind) so the team can size a procurement buffer.
 
 ## 2. Hard constraints
@@ -16,7 +16,7 @@ Persistent brief for this project. Source of truth for the task: `docs/ASSIGNMEN
 - Deliverables beyond code: public repo with an anonymous name, README (file/dir guide, how to start, Vercel link, explicit mention of AI tool use), and a <=10 min video (5 min client pitch + 5 min tech-lead walkthrough).
 
 ## 3. Core domain rule (most important)
-For each 30-min target slot T (`startTime`), the "forecast available at decision time" is the forecast row with the LATEST `publishTime` that is `<= decision cutoff for T`.
+For each target slot T (`startTime`; hourly, per D-003), the "forecast available at decision time" is the forecast row with the LATEST `publishTime` that is `<= decision cutoff for T`.
 - NEVER use a forecast with `publishTime > cutoff`. That is lookahead bias and invalidates every error metric.
 - If no forecast exists at or before the cutoff, the slot has no forecast: report it as missing. Do not fall back to a later one.
 - Ties on `publishTime` for the same slot: pick deterministically and document it in `docs/DECISIONS.md`.
