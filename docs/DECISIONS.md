@@ -103,3 +103,33 @@ Each entry: the decision, why, and what would change it. Facts about the data li
   real property of the data, and the UI must show it.
 - **Column naming:** timestamps carry a `_utc` suffix (`publish_time_utc`, `cutoff_utc`), to
   match the snapshot columns and CLAUDE.md conventions.
+
+## D-009: Metric definitions (`app/domain/metrics.py`)
+- **Headline metrics:** MAE, RMSE, mean bias, and nMAE = MAE / mean actual.
+- **No MAPE:** wind output can approach 0 MW, and dividing by near-zero actuals lets a few
+  calm hours dominate. nMAE normalises once by the mean actual.
+- **Procurement buffer** = the empirical quantile of **signed** error over **all** paired
+  slots, floored at 0 (P90 and P95).
+  - This makes the sentence "buy X MW above the forecast-implied need to be covered in 90% of
+    hours" literally true in-sample.
+  - The alternative of taking the quantile of positive errors only answers "how big are
+    shortfalls when they happen". It over-sizes the buffer for the coverage claim.
+- **Percentile method:**
+  - The buffer uses `inverted_cdf`: the smallest observed error with at least q of slots at
+    or below it, which guarantees the coverage.
+  - Descriptive percentiles use linear interpolation.
+  - At n=744 the two differ by a few MW. On small samples, linear interpolation can claim
+    coverage it does not deliver.
+- **"Half-hours" vs "hours":** the buffer message names the slot unit from the target grid.
+  Under D-003 the grid is hourly, so it reads "of hours". It would read "half-hours" on a
+  30-minute grid.
+- **Groupings:** hour of day and delivery day use Europe/London time. Groups with no paired
+  slots are kept with n=0.
+- **Lead-time curve:** horizon mode for H = 1..48 h. Each point reports MAE, linear P90 of
+  |error| and the P90 buffer. Lead times within a point are H+0.5 to H+3.5 h, because
+  publishes are 2 to 4 h apart.
+- **Caveat on results:** January day-ahead bias is +1,746 MW and 85% of hours are
+  over-forecast, so the buffer (about 4.2 GW at P90) is mostly systematic bias.
+  - If WINDFOR and FUELHH cover different wind fleets (DATA_NOTES open question 4), part of
+    that bias is a definitional gap, not forecast error.
+  - This must be stated wherever the buffer is shown.
